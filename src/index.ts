@@ -7,9 +7,9 @@ import apicache from "apicache";
 
 const snoowrap = new Snoowrap({
   userAgent: "trending-slackbot",
-  clientId: process.env.clientId,
-  clientSecret: process.env.clientSecret,
-  refreshToken: process.env.refreshToken,
+  clientId: process.env.CLIENT_ID,
+  clientSecret: process.env.CLIENT_SECRET,
+  refreshToken: process.env.REFRESH_TOKEN,
 });
 
 const app = express();
