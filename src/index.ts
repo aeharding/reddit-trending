@@ -3,9 +3,8 @@ import Snoowrap from "snoowrap";
 import getPosts from "./getPosts";
 import RSS from "rss";
 import express from "express";
-import apicache from "apicache";
 
-const snoowrap = new Snoowrap({
+export const snoowrap = new Snoowrap({
   userAgent: "trending-slackbot",
   clientId: process.env.CLIENT_ID,
   clientSecret: process.env.CLIENT_SECRET,
@@ -14,21 +13,27 @@ const snoowrap = new Snoowrap({
 
 const app = express();
 const port = process.env.PORT || 3000;
-let cache = apicache.middleware;
 
-app.get("/trending/:subreddit", cache("5 minutes"), async (req, res) => {
+app.get("/trending/:subreddit", async (req, res) => {
+  const limit = Math.min(100, +(req.query.limit || 100) || 100);
   const feed = new RSS({
-    title: `r/all top 100 posts from r/${req.params.subreddit}`,
+    title: `r/all top ${limit} posts from r/${req.params.subreddit}`,
     feed_url: "localhost",
     site_url: "https://reddit.com",
   });
 
-  const posts = await getPosts(req.params.subreddit, snoowrap);
+  const posts = await getPosts(req.params.subreddit, limit);
   posts.forEach((post) => {
     feed.item({
       url: `https://reddit.com${post.permalink}`,
       title: post.title,
-      description: `Currently #${post.rank} on r/all`,
+      description: [
+        req.query.beforeText,
+        `Currently #${post.rank} on r/all`,
+        req.query.afterText,
+      ]
+        .filter((p) => p)
+        .join(" "),
       date: new Date(post.created_utc * 1000),
     });
   });
@@ -37,5 +42,5 @@ app.get("/trending/:subreddit", cache("5 minutes"), async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`reddit-trending listening on port ${port}`);
 });
